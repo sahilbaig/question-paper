@@ -81,7 +81,8 @@ app.get("/all-questions", async (req, res) => {
 
         // Remove the header block
         const cleanedText = removeHeaderBlock(pdfData.text);
-        const c2 = extractDirectionBlocks(cleanedText)
+        const directionBlocks = extractDirectionBlocks(cleanedText)
+
         const questions = extractQuestionsWithOptions(cleanedText);
 
         res.json({
