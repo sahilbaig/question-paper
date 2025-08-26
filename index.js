@@ -6,11 +6,6 @@ const axios = require("axios");
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// ---------------------
-// Helper functions
-// ---------------------
-
 /**
  * Extracts questions with 4 options each, using a running counter
  */
@@ -41,6 +36,9 @@ function extractQuestionsWithOptions(text) {
 
     return questions;
 }
+// function removePdfBlocks(text) {
+//     return text.replace(/w w w \. h i t b u l l s e y e \. c o m/g, '');
+// }
 
 // ---------------------
 // Hardcoded PDF URL
@@ -52,12 +50,19 @@ const PDF_URL = "https://aqyqpzubfxakabcwoypo.supabase.co/storage/v1/object/publ
 // ---------------------
 
 // Get all questions sequentially
+function removeHeaderBlock(text) {
+    return text.replace(/Bulls Eye\s*w w w \. h i t b u l l s e y e \. c o m\s*CAT 1990/g, '');
+}
 app.get("/all-questions", async (req, res) => {
     try {
         const response = await axios.get(PDF_URL, { responseType: "arraybuffer" });
         const pdfData = await pdfParse(Buffer.from(response.data));
 
-        const questions = extractQuestionsWithOptions(pdfData.text);
+        // Remove the header block
+        const cleanedText = removeHeaderBlock(pdfData.text);
+        console.log(cleanedText);
+
+        const questions = extractQuestionsWithOptions(cleanedText);
 
         res.json({
             total_questions: questions.length,
