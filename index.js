@@ -43,12 +43,7 @@ function extractQuestionsWithOptions(text) {
 // ---------------------
 // Hardcoded PDF URL
 // ---------------------
-const PDF_URL = "https://aqyqpzubfxakabcwoypo.supabase.co/storage/v1/object/public/pdfs/20cfb098-06ed-4f51-bf65-a8b3dfc56ea1/CAT_1990_Question_Paper_dcf7b63b16e1c9bd05e952f3ea427a41.pdf";
-
-// ---------------------
-// Routes
-// ---------------------
-
+// const PDF_URL = "https://aqyqpzubfxakabcwoypo.supabase.co/storage/v1/object/public/pdfs/20cfb098-06ed-4f51-bf65-a8b3dfc56ea1/CAT_1990_Question_Paper_dcf7b63b16e1c9bd05e952f3ea427a41.pdf";
 // Get all questions sequentially
 function removeHeaderBlock(text) {
     return text.replace(/Bulls Eye\s*w w w \. h i t b u l l s e y e \. c o m\s*CAT 1990/g, '');
@@ -74,19 +69,32 @@ function extractDirectionBlocks(text) {
     return directions;
 }
 
-app.get("/all-questions", async (req, res) => {
+function removeDirectionBlocks(text) {
+    return text.replace(/DIRECTIONS[\s\S]*?(?=\n\s*\n|$)/g, "");
+}
+
+app.post("/all-questions", async (req, res) => {
     try {
+        const { url } = req.body;
+        PDF_URL = url
         const response = await axios.get(PDF_URL, { responseType: "arraybuffer" });
         const pdfData = await pdfParse(Buffer.from(response.data));
 
-        // Remove the header block
-        const cleanedText = removeHeaderBlock(pdfData.text);
-        const directionBlocks = extractDirectionBlocks(cleanedText)
+        // Step 1: Remove header
+        let cleanedText = removeHeaderBlock(pdfData.text);
 
+        // Step 2: Extract directions
+        const directionBlocks = extractDirectionBlocks(cleanedText);
+
+        // Step 3: Remove directions from text
+        cleanedText = removeDirectionBlocks(cleanedText);
+
+        // Step 4: Extract questions
         const questions = extractQuestionsWithOptions(cleanedText);
 
         res.json({
             total_questions: questions.length,
+            directions: directionBlocks,
             questions
         });
     } catch (err) {
@@ -94,6 +102,8 @@ app.get("/all-questions", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+
 
 // Debug endpoint to see raw text
 app.get("/debug-text", async (req, res) => {
