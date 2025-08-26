@@ -53,6 +53,27 @@ const PDF_URL = "https://aqyqpzubfxakabcwoypo.supabase.co/storage/v1/object/publ
 function removeHeaderBlock(text) {
     return text.replace(/Bulls Eye\s*w w w \. h i t b u l l s e y e \. c o m\s*CAT 1990/g, '');
 }
+
+function extractDirectionBlocks(text) {
+    // Normalize newlines
+    const normalized = text.replace(/\r\n/g, "\n");
+
+    const directionRegex = /DIRECTIONS\s+for\s+questions\s+(\d+)\s+to\s+(\d+):([\s\S]*?)(?=\n\s*\n|\n\d+\.|$)/gi;
+
+    const directions = [];
+    let match;
+
+    while ((match = directionRegex.exec(normalized)) !== null) {
+        directions.push({
+            from: parseInt(match[1]),
+            to: parseInt(match[2]),
+            text: match[3].trim()
+        });
+    }
+
+    return directions;
+}
+
 app.get("/all-questions", async (req, res) => {
     try {
         const response = await axios.get(PDF_URL, { responseType: "arraybuffer" });
@@ -60,8 +81,7 @@ app.get("/all-questions", async (req, res) => {
 
         // Remove the header block
         const cleanedText = removeHeaderBlock(pdfData.text);
-        console.log(cleanedText);
-
+        const c2 = extractDirectionBlocks(cleanedText)
         const questions = extractQuestionsWithOptions(cleanedText);
 
         res.json({
